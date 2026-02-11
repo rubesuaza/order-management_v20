@@ -19,18 +19,11 @@ public enum OrderStatus {
             return true; // Permite mantener el mismo estado
         }
 
-        switch (this) {
-            case PENDING:
-                return target == CONFIRMED || target == CANCELLED;
-            case CONFIRMED:
-                return target == SHIPPED || target == CANCELLED;
-            case SHIPPED:
-                return target == DELIVERED;
-            case DELIVERED:
-            case CANCELLED:
-                return false; // Estados finales, no se puede cambiar
-            default:
-                return false;
-        }
+        return switch (this) {
+            case PENDING -> target == CONFIRMED || target == CANCELLED;
+            case CONFIRMED -> target == SHIPPED || target == CANCELLED;
+            case SHIPPED -> target == DELIVERED;
+            case DELIVERED, CANCELLED -> false; // Estados finales, no se puede cambiar
+        };
     }
 }

@@ -5,18 +5,18 @@ import java.util.Objects;
 /**
  * Entidad que representa un item dentro de una orden.
  * Invariantes:
- * - El productId no puede ser null o vacío
+ * - El productId no puede ser null
  * - El unitPrice no puede ser null
  * - La quantity no puede ser null
  */
 public class OrderItem {
-    private final String productId;
+    private final ProductId productId;
     private final Money unitPrice;
     private final Quantity quantity;
 
-    public OrderItem(String productId, Money unitPrice, Quantity quantity) {
-        if (productId == null || productId.trim().isEmpty()) {
-            throw new IllegalArgumentException("El productId no puede ser null o vacío");
+    public OrderItem(ProductId productId, Money unitPrice, Quantity quantity) {
+        if (productId == null) {
+            throw new IllegalArgumentException("El productId no puede ser null");
         }
         if (unitPrice == null) {
             throw new IllegalArgumentException("El unitPrice no puede ser null");
@@ -25,12 +25,12 @@ public class OrderItem {
             throw new IllegalArgumentException("La quantity no puede ser null");
         }
         
-        this.productId = productId.trim();
+        this.productId = productId;
         this.unitPrice = unitPrice;
         this.quantity = quantity;
     }
 
-    public String getProductId() {
+    public ProductId getProductId() {
         return productId;
     }
 
@@ -67,7 +67,7 @@ public class OrderItem {
     @Override
     public String toString() {
         return "OrderItem{" +
-                "productId='" + productId + '\'' +
+                "productId=" + productId +
                 ", unitPrice=" + unitPrice +
                 ", quantity=" + quantity +
                 '}';

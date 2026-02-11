@@ -12,7 +12,7 @@ class OrderTest {
     void shouldCreateOrderWithValidData() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);
@@ -25,7 +25,7 @@ class OrderTest {
     @Test
     void shouldThrowExceptionWhenOrderIdIsNull() {
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         assertThrows(IllegalArgumentException.class, () -> {
@@ -56,8 +56,8 @@ class OrderTest {
     void shouldCalculateTotalAsSumOfItems() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2)),
-            new OrderItem("PROD-002", new Money(5.25), new Quantity(3))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2)),
+            new OrderItem(new ProductId("PROD-002"), new Money("5.25"), new Quantity(3))
         );
         
         Order order = new Order(orderId, items);
@@ -71,7 +71,7 @@ class OrderTest {
     void shouldChangeStatusFromPendingToConfirmed() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);
@@ -84,7 +84,7 @@ class OrderTest {
     void shouldChangeStatusFromPendingToCancelled() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);
@@ -97,7 +97,7 @@ class OrderTest {
     void shouldThrowExceptionWhenTransitioningToInvalidStatus() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);
@@ -116,7 +116,7 @@ class OrderTest {
     void shouldNotAllowStatusChangeFromCancelled() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);
@@ -131,7 +131,7 @@ class OrderTest {
     void shouldNotAllowStatusChangeFromDelivered() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);
@@ -148,10 +148,10 @@ class OrderTest {
     void shouldAddItemToOrder() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = new ArrayList<>();
-        items.add(new OrderItem("PROD-001", new Money(10.50), new Quantity(2)));
+        items.add(new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2)));
         
         Order order = new Order(orderId, items);
-        OrderItem newItem = new OrderItem("PROD-002", new Money(5.25), new Quantity(1));
+        OrderItem newItem = new OrderItem(new ProductId("PROD-002"), new Money("5.25"), new Quantity(1));
         order.addItem(newItem);
         
         assertEquals(2, order.getItems().size());
@@ -161,7 +161,7 @@ class OrderTest {
     void shouldThrowExceptionWhenAddingNullItem() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);
@@ -175,7 +175,7 @@ class OrderTest {
     void shouldHaveCreatedAtTimestamp() {
         OrderId orderId = new OrderId("ORD-001");
         List<OrderItem> items = List.of(
-            new OrderItem("PROD-001", new Money(10.50), new Quantity(2))
+            new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))
         );
         
         Order order = new Order(orderId, items);

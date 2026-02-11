@@ -55,11 +55,9 @@ public class Order {
      * Invariante: El total debe ser igual a la suma de los items.
      */
     public Money calculateTotal() {
-        Money total = new Money(0.0);
-        for (OrderItem item : items) {
-            total = total.add(item.calculateTotal());
-        }
-        return total;
+        return items.stream()
+                .map(OrderItem::calculateTotal)
+                .reduce(new Money(0L), Money::add);
     }
 
     /**

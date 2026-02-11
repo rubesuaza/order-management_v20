@@ -15,7 +15,14 @@ public record OrderResponse(
     LocalDateTime createdAt,
     List<OrderItemResponse> items
 ) {
-    public static OrderResponse from(Order order) {
+    /**
+     * Crea un OrderResponse desde un Order y su total calculado.
+     * El total debe ser calculado previamente en la capa de aplicación.
+     * @param order La orden del dominio
+     * @param total El total calculado de la orden
+     * @return OrderResponse con los datos de la orden
+     */
+    public static OrderResponse from(Order order, Double total) {
         List<OrderItemResponse> items = order.getItems().stream()
             .map(OrderItemResponse::from)
             .toList();
@@ -23,7 +30,7 @@ public record OrderResponse(
         return new OrderResponse(
             order.getId().getValue(),
             order.getStatus().name(),
-            order.calculateTotal().getAmount(),
+            total,
             order.getCreatedAt(),
             items
         );

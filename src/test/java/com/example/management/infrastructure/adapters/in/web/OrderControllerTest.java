@@ -1,13 +1,17 @@
 package com.example.management.infrastructure.adapters.in.web;
 
+import com.example.management.application.ports.in.CreateOrderCommand;
 import com.example.management.application.ports.in.CreateOrderUseCase;
 import com.example.management.application.ports.in.GetOrderUseCase;
+import com.example.management.application.ports.in.UpdateOrderStatusCommand;
 import com.example.management.application.ports.in.UpdateOrderStatusUseCase;
+import com.example.management.application.services.OrderService;
 import com.example.management.domain.model.Money;
 import com.example.management.domain.model.Order;
 import com.example.management.domain.model.OrderId;
 import com.example.management.domain.model.OrderItem;
 import com.example.management.domain.model.OrderStatus;
+import com.example.management.domain.model.ProductId;
 import com.example.management.domain.model.Quantity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -47,15 +51,19 @@ class OrderControllerTest {
     @MockBean
     private UpdateOrderStatusUseCase updateOrderStatusUseCase;
     
+    @MockBean
+    private OrderService orderService;
+    
     @Test
     void shouldCreateOrder() throws Exception {
         // Given
         OrderId orderId = new OrderId("ORDER-001");
-        OrderItem item = new OrderItem("PROD-001", new Money(10.0), new Quantity(2));
+        OrderItem item = new OrderItem(new ProductId("PROD-001"), new Money("10.0"), new Quantity(2));
         Order order = new Order(orderId, List.of(item));
         
-        when(createOrderUseCase.createOrder(any(OrderId.class), any(List.class)))
+        when(createOrderUseCase.createOrder(any(CreateOrderCommand.class)))
             .thenReturn(order);
+        when(orderService.calculateOrderTotal(order)).thenReturn(20.0);
         
         String requestBody = """
             {
@@ -103,11 +111,12 @@ class OrderControllerTest {
     void shouldGetOrder() throws Exception {
         // Given
         OrderId orderId = new OrderId("ORDER-001");
-        OrderItem item = new OrderItem("PROD-001", new Money(10.0), new Quantity(2));
+        OrderItem item = new OrderItem(new ProductId("PROD-001"), new Money("10.0"), new Quantity(2));
         Order order = new Order(orderId, List.of(item));
         
         when(getOrderUseCase.getOrder(orderId))
             .thenReturn(Optional.of(order));
+        when(orderService.calculateOrderTotal(order)).thenReturn(20.0);
         
         // When & Then
         mockMvc.perform(get("/api/orders/ORDER-001"))
@@ -134,12 +143,13 @@ class OrderControllerTest {
     void shouldUpdateOrderStatus() throws Exception {
         // Given
         OrderId orderId = new OrderId("ORDER-001");
-        OrderItem item = new OrderItem("PROD-001", new Money(10.0), new Quantity(2));
+        OrderItem item = new OrderItem(new ProductId("PROD-001"), new Money("10.0"), new Quantity(2));
         Order order = new Order(orderId, List.of(item));
         order.changeStatus(OrderStatus.CONFIRMED);
         
-        when(updateOrderStatusUseCase.updateOrderStatus(orderId, OrderStatus.CONFIRMED))
+        when(updateOrderStatusUseCase.updateOrderStatus(any(UpdateOrderStatusCommand.class)))
             .thenReturn(order);
+        when(orderService.calculateOrderTotal(order)).thenReturn(20.0);
         
         String requestBody = """
             {

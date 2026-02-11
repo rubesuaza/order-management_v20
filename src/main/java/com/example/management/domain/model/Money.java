@@ -11,11 +11,30 @@ import java.util.Objects;
 public class Money {
     private final BigDecimal amount;
 
-    public Money(double amount) {
-        if (amount < 0) {
+    /**
+     * Constructor que acepta un String para garantizar precisión exacta.
+     * @param amount El monto como String (ej: "100.50")
+     */
+    public Money(String amount) {
+        if (amount == null || amount.trim().isEmpty()) {
+            throw new IllegalArgumentException("El monto no puede ser null o vacío");
+        }
+        BigDecimal parsedAmount = new BigDecimal(amount.trim());
+        if (parsedAmount.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("El monto no puede ser negativo");
         }
-        this.amount = BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP);
+        this.amount = parsedAmount.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Constructor que acepta centavos como long para garantizar precisión exacta.
+     * @param cents El monto en centavos (ej: 10050 para representar 100.50)
+     */
+    public Money(long cents) {
+        if (cents < 0) {
+            throw new IllegalArgumentException("El monto no puede ser negativo");
+        }
+        this.amount = BigDecimal.valueOf(cents, 2).setScale(2, RoundingMode.HALF_UP);
     }
 
     private Money(BigDecimal amount) {
@@ -33,6 +52,12 @@ public class Money {
     public Money multiply(int quantity) {
         if (quantity < 0) {
             throw new IllegalArgumentException("La cantidad no puede ser negativa");
+        }
+        if (quantity == 0) {
+            return new Money(0L);
+        }
+        if (quantity == 1) {
+            return this;
         }
         return new Money(this.amount.multiply(BigDecimal.valueOf(quantity)));
     }

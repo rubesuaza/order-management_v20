@@ -13,7 +13,7 @@ public record OrderItemResponse(
 ) {
     public static OrderItemResponse from(OrderItem item) {
         return new OrderItemResponse(
-            item.getProductId(),
+            item.getProductId().getValue(),
             item.getUnitPrice().getAmount(),
             item.getQuantity().getValue(),
             item.calculateTotal().getAmount()
