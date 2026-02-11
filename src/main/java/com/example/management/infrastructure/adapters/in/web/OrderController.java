@@ -5,7 +5,7 @@ import com.example.management.application.ports.in.CreateOrderUseCase;
 import com.example.management.application.ports.in.GetOrderUseCase;
 import com.example.management.application.ports.in.UpdateOrderStatusCommand;
 import com.example.management.application.ports.in.UpdateOrderStatusUseCase;
-import com.example.management.application.services.OrderService;
+import com.example.management.application.services.dto.OrderQueryResult;
 import com.example.management.domain.model.OrderId;
 import com.example.management.infrastructure.adapters.in.web.dto.CreateOrderRequest;
 import com.example.management.infrastructure.adapters.in.web.dto.OrderResponse;
@@ -14,6 +14,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 
 /**
  * Controlador REST para la gestión de órdenes.
@@ -26,17 +28,14 @@ public class OrderController {
     private final CreateOrderUseCase createOrderUseCase;
     private final GetOrderUseCase getOrderUseCase;
     private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
-    private final OrderService orderService;
     
     public OrderController(
             CreateOrderUseCase createOrderUseCase,
             GetOrderUseCase getOrderUseCase,
-            UpdateOrderStatusUseCase updateOrderStatusUseCase,
-            OrderService orderService) {
+            UpdateOrderStatusUseCase updateOrderStatusUseCase) {
         this.createOrderUseCase = createOrderUseCase;
         this.getOrderUseCase = getOrderUseCase;
         this.updateOrderStatusUseCase = updateOrderStatusUseCase;
-        this.orderService = orderService;
     }
     
     @PostMapping
@@ -46,24 +45,21 @@ public class OrderController {
             request.items().stream()
                 .map(item -> new CreateOrderCommand.OrderItemCommand(
                     item.productId(),
-                    String.valueOf(item.unitPrice()),
+                    BigDecimal.valueOf(item.unitPrice()),
                     item.quantity()
                 ))
                 .toList()
         );
         
-        var order = createOrderUseCase.createOrder(command);
-        Double total = orderService.calculateOrderTotal(order);
-        return ResponseEntity.status(HttpStatus.CREATED).body(OrderResponse.from(order, total));
+        OrderQueryResult orderResult = createOrderUseCase.createOrder(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(OrderResponse.from(orderResult));
     }
     
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable String orderId) {
         return getOrderUseCase.getOrder(new OrderId(orderId))
-            .map(order -> {
-                Double total = orderService.calculateOrderTotal(order);
-                return ResponseEntity.ok(OrderResponse.from(order, total));
-            })
+            .map(OrderResponse::from)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
     
@@ -73,9 +69,8 @@ public class OrderController {
             @Valid @RequestBody UpdateOrderStatusRequest request) {
         try {
             UpdateOrderStatusCommand command = new UpdateOrderStatusCommand(orderId, request.status());
-            var updatedOrder = updateOrderStatusUseCase.updateOrderStatus(command);
-            Double total = orderService.calculateOrderTotal(updatedOrder);
-            return ResponseEntity.ok(OrderResponse.from(updatedOrder, total));
+            OrderQueryResult updatedOrderResult = updateOrderStatusUseCase.updateOrderStatus(command);
+            return ResponseEntity.ok(OrderResponse.from(updatedOrderResult));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }

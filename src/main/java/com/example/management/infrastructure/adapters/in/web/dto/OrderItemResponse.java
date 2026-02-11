@@ -1,22 +1,23 @@
 package com.example.management.infrastructure.adapters.in.web.dto;
 
-import com.example.management.domain.model.OrderItem;
+import com.example.management.application.services.dto.OrderItemQueryResult;
+import java.math.BigDecimal;
 
 /**
  * DTO para la respuesta de un item de orden.
  */
 public record OrderItemResponse(
     String productId,
-    Double unitPrice,
+    BigDecimal unitPrice,
     Integer quantity,
-    Double total
+    BigDecimal total
 ) {
-    public static OrderItemResponse from(OrderItem item) {
+    public static OrderItemResponse from(OrderItemQueryResult itemResult) {
         return new OrderItemResponse(
-            item.getProductId().getValue(),
-            item.getUnitPrice().getAmount(),
-            item.getQuantity().getValue(),
-            item.calculateTotal().getAmount()
+            itemResult.productId(),
+            itemResult.unitPrice(),
+            itemResult.quantity(),
+            itemResult.total()
         );
     }
 }

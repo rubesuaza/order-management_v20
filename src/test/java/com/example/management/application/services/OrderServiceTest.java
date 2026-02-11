@@ -3,6 +3,7 @@ package com.example.management.application.services;
 import com.example.management.application.ports.in.CreateOrderCommand;
 import com.example.management.application.ports.in.UpdateOrderStatusCommand;
 import com.example.management.application.ports.out.OrderRepository;
+import com.example.management.application.services.dto.OrderQueryResult;
 import com.example.management.domain.exception.InvalidOrderStateException;
 import com.example.management.domain.model.Money;
 import com.example.management.domain.model.Order;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,20 +50,20 @@ class OrderServiceTest {
         // Arrange
         CreateOrderCommand command = new CreateOrderCommand(
             "ORD-001",
-            List.of(new CreateOrderCommand.OrderItemCommand("PROD-001", "10.50", 2))
+            List.of(new CreateOrderCommand.OrderItemCommand("PROD-001", BigDecimal.valueOf(10.50), 2))
         );
         
         when(orderRepository.existsById(any(OrderId.class))).thenReturn(false);
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        Order result = orderService.createOrder(command);
+        OrderQueryResult result = orderService.createOrder(command);
 
         // Assert
         assertNotNull(result);
-        assertEquals("ORD-001", result.getId().getValue());
-        assertEquals(OrderStatus.PENDING, result.getStatus());
-        assertEquals(1, result.getItems().size());
+        assertEquals("ORD-001", result.id());
+        assertEquals("PENDING", result.status());
+        assertEquals(1, result.items().size());
         verify(orderRepository).existsById(any(OrderId.class));
         verify(orderRepository).save(any(Order.class));
     }
@@ -71,7 +73,7 @@ class OrderServiceTest {
         // Arrange
         CreateOrderCommand command = new CreateOrderCommand(
             "ORD-001",
-            List.of(new CreateOrderCommand.OrderItemCommand("PROD-001", "10.50", 2))
+            List.of(new CreateOrderCommand.OrderItemCommand("PROD-001", BigDecimal.valueOf(10.50), 2))
         );
         
         when(orderRepository.existsById(any(OrderId.class))).thenReturn(true);
@@ -93,8 +95,8 @@ class OrderServiceTest {
         CreateOrderCommand command = new CreateOrderCommand(
             "ORD-002",
             List.of(
-                new CreateOrderCommand.OrderItemCommand("PROD-001", "10.50", 2),
-                new CreateOrderCommand.OrderItemCommand("PROD-002", "5.25", 3)
+                new CreateOrderCommand.OrderItemCommand("PROD-001", BigDecimal.valueOf(10.50), 2),
+                new CreateOrderCommand.OrderItemCommand("PROD-002", BigDecimal.valueOf(5.25), 3)
             )
         );
         
@@ -102,11 +104,11 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        Order result = orderService.createOrder(command);
+        OrderQueryResult result = orderService.createOrder(command);
 
         // Assert
         assertNotNull(result);
-        verify(orderRepository).save(result);
+        verify(orderRepository).save(any(Order.class));
     }
 
     // ========== Tests para getOrder ==========
@@ -123,12 +125,12 @@ class OrderServiceTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
 
         // Act
-        Optional<Order> result = orderService.getOrder(orderId);
+        Optional<OrderQueryResult> result = orderService.getOrder(orderId);
 
         // Assert
         assertTrue(result.isPresent());
-        assertEquals(existingOrder, result.get());
-        assertEquals(orderId, result.get().getId());
+        assertEquals("ORD-001", result.get().id());
+        assertEquals("PENDING", result.get().status());
         verify(orderRepository).findById(orderId);
     }
 
@@ -140,7 +142,7 @@ class OrderServiceTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
         // Act
-        Optional<Order> result = orderService.getOrder(orderId);
+        Optional<OrderQueryResult> result = orderService.getOrder(orderId);
 
         // Assert
         assertTrue(result.isEmpty());
@@ -164,11 +166,11 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        Order result = orderService.updateOrderStatus(command);
+        OrderQueryResult result = orderService.updateOrderStatus(command);
 
         // Assert
         assertNotNull(result);
-        assertEquals(OrderStatus.CONFIRMED, result.getStatus());
+        assertEquals("CONFIRMED", result.status());
         verify(orderRepository).findById(orderId);
         verify(orderRepository).save(existingOrder);
     }
@@ -227,25 +229,33 @@ class OrderServiceTest {
         );
         
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(existingOrder));
-        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order saved = invocation.getArgument(0);
+            return saved;
+        });
 
         // Act - Transición válida: PENDING -> CONFIRMED
-        Order result1 = orderService.updateOrderStatus(new UpdateOrderStatusCommand("ORD-001", "CONFIRMED"));
-        assertEquals(OrderStatus.CONFIRMED, result1.getStatus());
+        OrderQueryResult result1 = orderService.updateOrderStatus(new UpdateOrderStatusCommand("ORD-001", "CONFIRMED"));
+        assertEquals("CONFIRMED", result1.status());
 
         // Simular que la orden ya está confirmada
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(result1));
+        Order confirmedOrder = new Order(orderId, List.of(new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))));
+        confirmedOrder.changeStatus(OrderStatus.CONFIRMED);
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(confirmedOrder));
         
         // Act - Transición válida: CONFIRMED -> SHIPPED
-        Order result2 = orderService.updateOrderStatus(new UpdateOrderStatusCommand("ORD-001", "SHIPPED"));
-        assertEquals(OrderStatus.SHIPPED, result2.getStatus());
+        OrderQueryResult result2 = orderService.updateOrderStatus(new UpdateOrderStatusCommand("ORD-001", "SHIPPED"));
+        assertEquals("SHIPPED", result2.status());
 
         // Simular que la orden ya está enviada
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(result2));
+        Order shippedOrder = new Order(orderId, List.of(new OrderItem(new ProductId("PROD-001"), new Money("10.50"), new Quantity(2))));
+        shippedOrder.changeStatus(OrderStatus.CONFIRMED);
+        shippedOrder.changeStatus(OrderStatus.SHIPPED);
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(shippedOrder));
         
         // Act - Transición válida: SHIPPED -> DELIVERED
-        Order result3 = orderService.updateOrderStatus(new UpdateOrderStatusCommand("ORD-001", "DELIVERED"));
-        assertEquals(OrderStatus.DELIVERED, result3.getStatus());
+        OrderQueryResult result3 = orderService.updateOrderStatus(new UpdateOrderStatusCommand("ORD-001", "DELIVERED"));
+        assertEquals("DELIVERED", result3.status());
 
         // Assert
         verify(orderRepository, times(3)).findById(orderId);

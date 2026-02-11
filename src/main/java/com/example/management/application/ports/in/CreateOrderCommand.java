@@ -1,5 +1,6 @@
 package com.example.management.application.ports.in;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -15,7 +16,7 @@ public record CreateOrderCommand(
      */
     public record OrderItemCommand(
         String productId,
-        String unitPrice,
+        BigDecimal unitPrice,
         Integer quantity
     ) {}
 }

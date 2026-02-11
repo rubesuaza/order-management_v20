@@ -6,6 +6,8 @@ import com.example.management.application.ports.in.GetOrderUseCase;
 import com.example.management.application.ports.in.UpdateOrderStatusCommand;
 import com.example.management.application.ports.in.UpdateOrderStatusUseCase;
 import com.example.management.application.ports.out.OrderRepository;
+import com.example.management.application.services.dto.OrderItemQueryResult;
+import com.example.management.application.services.dto.OrderQueryResult;
 import com.example.management.domain.exception.InvalidOrderStateException;
 import com.example.management.domain.model.Money;
 import com.example.management.domain.model.Order;
@@ -34,7 +36,7 @@ public class OrderService implements CreateOrderUseCase, GetOrderUseCase, Update
     }
     
     @Override
-    public Order createOrder(CreateOrderCommand command) {
+    public OrderQueryResult createOrder(CreateOrderCommand command) {
         OrderId orderId = new OrderId(command.orderId());
         
         if (orderRepository.existsById(orderId)) {
@@ -46,23 +48,25 @@ public class OrderService implements CreateOrderUseCase, GetOrderUseCase, Update
         List<OrderItem> items = command.items().stream()
             .map(itemCommand -> new OrderItem(
                 new ProductId(itemCommand.productId()),
-                new Money(itemCommand.unitPrice()),
+                new Money(itemCommand.unitPrice().toString()),
                 new Quantity(itemCommand.quantity())
             ))
             .toList();
         
         Order order = new Order(orderId, items);
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        return toOrderQueryResult(savedOrder);
     }
     
     @Override
     @Transactional(readOnly = true)
-    public Optional<Order> getOrder(OrderId orderId) {
-        return orderRepository.findById(orderId);
+    public Optional<OrderQueryResult> getOrder(OrderId orderId) {
+        return orderRepository.findById(orderId)
+            .map(this::toOrderQueryResult);
     }
     
     @Override
-    public Order updateOrderStatus(UpdateOrderStatusCommand command) {
+    public OrderQueryResult updateOrderStatus(UpdateOrderStatusCommand command) {
         OrderId orderId = new OrderId(command.orderId());
         OrderStatus newStatus;
         
@@ -83,16 +87,26 @@ public class OrderService implements CreateOrderUseCase, GetOrderUseCase, Update
             );
         }
         
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        return toOrderQueryResult(savedOrder);
     }
     
-    /**
-     * Calcula el total de una orden.
-     * Este método debe ser invocado por la capa de infraestructura antes de crear el DTO de respuesta.
-     * @param order La orden de la cual calcular el total
-     * @return El total calculado como Double
-     */
-    public Double calculateOrderTotal(Order order) {
-        return order.calculateTotal().getAmount();
+    private OrderQueryResult toOrderQueryResult(Order order) {
+        List<OrderItemQueryResult> items = order.getItems().stream()
+            .map(item -> new OrderItemQueryResult(
+                item.getProductId().getValue(),
+                item.getUnitPrice().getAmount(),
+                item.getQuantity().getValue(),
+                item.calculateTotal().getAmount()
+            ))
+            .toList();
+        
+        return new OrderQueryResult(
+            order.getId().getValue(),
+            order.getStatus().name(),
+            order.calculateTotal().getAmount(),
+            order.getCreatedAt(),
+            items
+        );
     }
 }

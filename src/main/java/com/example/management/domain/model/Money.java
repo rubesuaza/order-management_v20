@@ -41,8 +41,8 @@ public class Money {
         this.amount = amount.setScale(2, RoundingMode.HALF_UP);
     }
 
-    public double getAmount() {
-        return amount.doubleValue();
+    public BigDecimal getAmount() {
+        return amount;
     }
 
     public Money add(Money other) {

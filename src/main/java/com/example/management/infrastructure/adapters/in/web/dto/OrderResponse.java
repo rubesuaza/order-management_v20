@@ -1,7 +1,7 @@
 package com.example.management.infrastructure.adapters.in.web.dto;
 
-import com.example.management.domain.model.Order;
-import com.example.management.domain.model.OrderItem;
+import com.example.management.application.services.dto.OrderItemQueryResult;
+import com.example.management.application.services.dto.OrderQueryResult;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,27 +11,25 @@ import java.util.List;
 public record OrderResponse(
     String id,
     String status,
-    Double total,
+    java.math.BigDecimal total,
     LocalDateTime createdAt,
     List<OrderItemResponse> items
 ) {
     /**
-     * Crea un OrderResponse desde un Order y su total calculado.
-     * El total debe ser calculado previamente en la capa de aplicación.
-     * @param order La orden del dominio
-     * @param total El total calculado de la orden
+     * Crea un OrderResponse desde un OrderQueryResult de la capa de aplicación.
+     * @param orderResult El resultado de consulta de orden de la capa de aplicación
      * @return OrderResponse con los datos de la orden
      */
-    public static OrderResponse from(Order order, Double total) {
-        List<OrderItemResponse> items = order.getItems().stream()
+    public static OrderResponse from(OrderQueryResult orderResult) {
+        List<OrderItemResponse> items = orderResult.items().stream()
             .map(OrderItemResponse::from)
             .toList();
         
         return new OrderResponse(
-            order.getId().getValue(),
-            order.getStatus().name(),
-            total,
-            order.getCreatedAt(),
+            orderResult.id(),
+            orderResult.status(),
+            orderResult.total(),
+            orderResult.createdAt(),
             items
         );
     }

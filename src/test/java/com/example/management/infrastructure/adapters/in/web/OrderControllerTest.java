@@ -5,14 +5,9 @@ import com.example.management.application.ports.in.CreateOrderUseCase;
 import com.example.management.application.ports.in.GetOrderUseCase;
 import com.example.management.application.ports.in.UpdateOrderStatusCommand;
 import com.example.management.application.ports.in.UpdateOrderStatusUseCase;
-import com.example.management.application.services.OrderService;
-import com.example.management.domain.model.Money;
-import com.example.management.domain.model.Order;
+import com.example.management.application.services.dto.OrderItemQueryResult;
+import com.example.management.application.services.dto.OrderQueryResult;
 import com.example.management.domain.model.OrderId;
-import com.example.management.domain.model.OrderItem;
-import com.example.management.domain.model.OrderStatus;
-import com.example.management.domain.model.ProductId;
-import com.example.management.domain.model.Quantity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +16,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,19 +48,24 @@ class OrderControllerTest {
     @MockBean
     private UpdateOrderStatusUseCase updateOrderStatusUseCase;
     
-    @MockBean
-    private OrderService orderService;
-    
     @Test
     void shouldCreateOrder() throws Exception {
         // Given
-        OrderId orderId = new OrderId("ORDER-001");
-        OrderItem item = new OrderItem(new ProductId("PROD-001"), new Money("10.0"), new Quantity(2));
-        Order order = new Order(orderId, List.of(item));
+        OrderQueryResult orderResult = new OrderQueryResult(
+            "ORDER-001",
+            "PENDING",
+            BigDecimal.valueOf(20.0),
+            LocalDateTime.now(),
+            List.of(new OrderItemQueryResult(
+                "PROD-001",
+                BigDecimal.valueOf(10.0),
+                2,
+                BigDecimal.valueOf(20.0)
+            ))
+        );
         
         when(createOrderUseCase.createOrder(any(CreateOrderCommand.class)))
-            .thenReturn(order);
-        when(orderService.calculateOrderTotal(order)).thenReturn(20.0);
+            .thenReturn(orderResult);
         
         String requestBody = """
             {
@@ -111,12 +113,21 @@ class OrderControllerTest {
     void shouldGetOrder() throws Exception {
         // Given
         OrderId orderId = new OrderId("ORDER-001");
-        OrderItem item = new OrderItem(new ProductId("PROD-001"), new Money("10.0"), new Quantity(2));
-        Order order = new Order(orderId, List.of(item));
+        OrderQueryResult orderResult = new OrderQueryResult(
+            "ORDER-001",
+            "PENDING",
+            BigDecimal.valueOf(20.0),
+            LocalDateTime.now(),
+            List.of(new OrderItemQueryResult(
+                "PROD-001",
+                BigDecimal.valueOf(10.0),
+                2,
+                BigDecimal.valueOf(20.0)
+            ))
+        );
         
         when(getOrderUseCase.getOrder(orderId))
-            .thenReturn(Optional.of(order));
-        when(orderService.calculateOrderTotal(order)).thenReturn(20.0);
+            .thenReturn(Optional.of(orderResult));
         
         // When & Then
         mockMvc.perform(get("/api/orders/ORDER-001"))
@@ -142,14 +153,21 @@ class OrderControllerTest {
     @Test
     void shouldUpdateOrderStatus() throws Exception {
         // Given
-        OrderId orderId = new OrderId("ORDER-001");
-        OrderItem item = new OrderItem(new ProductId("PROD-001"), new Money("10.0"), new Quantity(2));
-        Order order = new Order(orderId, List.of(item));
-        order.changeStatus(OrderStatus.CONFIRMED);
+        OrderQueryResult orderResult = new OrderQueryResult(
+            "ORDER-001",
+            "CONFIRMED",
+            BigDecimal.valueOf(20.0),
+            LocalDateTime.now(),
+            List.of(new OrderItemQueryResult(
+                "PROD-001",
+                BigDecimal.valueOf(10.0),
+                2,
+                BigDecimal.valueOf(20.0)
+            ))
+        );
         
         when(updateOrderStatusUseCase.updateOrderStatus(any(UpdateOrderStatusCommand.class)))
-            .thenReturn(order);
-        when(orderService.calculateOrderTotal(order)).thenReturn(20.0);
+            .thenReturn(orderResult);
         
         String requestBody = """
             {

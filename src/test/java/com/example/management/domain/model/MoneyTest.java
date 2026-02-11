@@ -1,6 +1,7 @@
 package com.example.management.domain.model;
 
 import org.junit.jupiter.api.Test;
+import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MoneyTest {
@@ -9,14 +10,14 @@ class MoneyTest {
     void shouldCreateMoneyWithValidAmountFromString() {
         Money money = new Money("100.50");
         
-        assertEquals(100.50, money.getAmount(), 0.001);
+        assertEquals(new BigDecimal("100.50"), money.getAmount());
     }
 
     @Test
     void shouldCreateMoneyWithValidAmountFromCents() {
         Money money = new Money(10050L); // 100.50 en centavos
         
-        assertEquals(100.50, money.getAmount(), 0.001);
+        assertEquals(new BigDecimal("100.50"), money.getAmount());
     }
 
     @Test
@@ -37,7 +38,7 @@ class MoneyTest {
     void shouldAllowZeroAmount() {
         Money money = new Money(0L);
         
-        assertEquals(0.0, money.getAmount(), 0.001);
+        assertEquals(BigDecimal.ZERO, money.getAmount());
     }
 
     @Test
@@ -47,7 +48,7 @@ class MoneyTest {
         
         Money result = money1.add(money2);
         
-        assertEquals(150.75, result.getAmount(), 0.001);
+        assertEquals(new BigDecimal("150.75"), result.getAmount());
     }
 
     @Test
@@ -57,7 +58,7 @@ class MoneyTest {
         
         Money result = money.multiply(quantity);
         
-        assertEquals(31.50, result.getAmount(), 0.001);
+        assertEquals(new BigDecimal("31.50"), result.getAmount());
     }
 
     @Test
